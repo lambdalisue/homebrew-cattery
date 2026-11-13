@@ -1,0 +1,46 @@
+name: Update
+
+# lambdalisue/cattery's release workflow dispatches here once a release's
+# disk image is attached; a run by hand takes the same two values.
+on:
+  repository_dispatch:
+    types: [update]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The release tag (e.g. v0.1.0)
+        required: true
+        type: string
+      sha256:
+        description: The SHA-256 of Cattery_<version>_aarch64.dmg
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # The values reach the script through the environment, so their text can
+    # never be read as shell.
+    env:
+      VERSION: ${{ github.event.inputs.version || github.event.client_payload.version }}
+      SHA256: ${{ github.event.inputs.sha256 || github.event.client_payload.sha256 }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Update the cask
+        run: |
+          VERSION="${VERSION#v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::not a version: $VERSION"; exit 1; }
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::not a SHA-256: $SHA256"; exit 1; }
+          perl -i -pe 's/^  version "[^"]*"/  version "$ENV{VERSION}"/; s/^  sha256 "[0-9a-f]{64}"/  sha256 "$ENV{SHA256}"/' Casks/cattery.rb
+          git diff
+      - name: Commit and push
+        run: |
+          if [ -n "$(git diff --name-only Casks/cattery.rb)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "Update Cattery to ${VERSION}"
+            git push
+          fi
