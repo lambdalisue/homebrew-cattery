@@ -1,6 +1,6 @@
 cask "cattery" do
-  version "0.5.1"
-  sha256 "812a7ae3026ad991217c0d11a96990bf9fdfc9b1f42aad4e600f46bbb7c6a557"
+  version "0.5.2"
+  sha256 "2586f356704526bc39e5003192609f882111bb3f454c9b10a4600fca090791aa"
 
   url "https://github.com/lambdalisue/cattery/releases/download/v#{version}/Cattery_#{version}_aarch64.dmg"
   name "Cattery"
